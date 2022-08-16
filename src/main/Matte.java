@@ -3,7 +3,7 @@ package main;
 public class Matte implements Material {
     private final Vector3 albedo;
 
-    Matte(Vector3 albedo) {
+    public Matte(Vector3 albedo) {
         this.albedo = albedo;
     }
 

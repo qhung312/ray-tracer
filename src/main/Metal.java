@@ -4,7 +4,7 @@ public class Metal implements Material {
     private final Vector3 albedo;
     private final double fuzz;
 
-    Metal(Vector3 albedo, double fuzz) {
+    public Metal(Vector3 albedo, double fuzz) {
         this.albedo = albedo;
         this.fuzz = fuzz;
     }
