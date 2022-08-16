@@ -63,6 +63,7 @@ public class Main {
         for (var s : a) {
             Intersection d = s.intersects(r);
             if (d == null) continue;
+            if (d.getT() <= 0.001) continue;
             if (c == null || c.getT() > d.getT()) {
                 c = d;
             }
