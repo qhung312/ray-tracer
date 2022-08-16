@@ -3,10 +3,16 @@ package main;
 public class Sphere {
     private final Vector3 center;
     private final double radius;
+    private final Material material;
 
-    public Sphere(Vector3 center, double radius) {
+    public Sphere(Vector3 center, double radius, Material material) {
         this.center = center;
         this.radius = radius;
+        this.material = material;
+    }
+
+    Material getMaterial() {
+        return material;
     }
 
     Intersection intersects(Ray r) {

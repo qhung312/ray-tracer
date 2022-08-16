@@ -41,6 +41,14 @@ public class Vector3 {
         );
     }
 
+    public Vector3 scaleVector(Vector3 other) {
+        return new Vector3(
+                getX() * other.getX(),
+                getY() * other.getY(),
+                getZ() * other.getZ()
+        );
+    }
+
     public double magnitude_squared() {
         return getX() * getX() + getY() * getY() + getZ() * getZ();
     }

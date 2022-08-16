@@ -11,19 +11,11 @@ public class Main {
     final PrintWriter out = new PrintWriter(System.out);
 
     void run() {
-        a = new Sphere[2];
-        a[0] = new Sphere(new Vector3(0, 0, -1), 0.5);
-        a[1] = new Sphere(new Vector3(0, -100.5, -1), 100);
+        a = new Sphere[3];
+        a[0] = new Sphere(new Vector3(-0.5, 0, -1), 0.5, Globals.SURFACE_MATTE);
+        a[1] = new Sphere(new Vector3(0, -100.5, -1), 100, Globals.SURFACE_MATTE);
+        a[2] = new Sphere(new Vector3(0.5, 0, -1), 0.5, Globals.SURFACE_METAL_FUZZY);
         out.printf("P3\n%d %d\n255\n", Globals.imgWidth, Globals.imgHeight);
-
-        Vector3 origin = new Vector3(0, 0, 0);
-        Vector3 horizontal = new Vector3(Globals.viewportWidth, 0, 0);
-        Vector3 vertical = new Vector3(0, Globals.viewportHeight, 0);
-        Vector3 lowerLeft = new Vector3(
-                -Globals.viewportWidth / 2,
-                -Globals.viewportHeight / 2,
-                Globals.viewportDist
-        );
 
         // Render each pixel
         for (int i = 0; i < Globals.imgHeight; i++) {
@@ -33,7 +25,10 @@ public class Main {
                     double y = (Globals.imgHeight - i - 1 + Globals.randomDouble(0, 1)) / (Globals.imgHeight - 1);
                     double x = (j + Globals.randomDouble(0, 1)) / (Globals.imgWidth - 1);
 
-                    Ray r = new Ray(origin, lowerLeft.add(vertical.scale(y)).add(horizontal.scale(x)).normalize());
+                    Ray r = new Ray(
+                            Globals.origin,
+                            Globals.lowerLeft.add(Globals.vertical.scale(y)).add(Globals.horizontal.scale(x)).normalize()
+                    );
                     fullColor = fullColor.add(projectRay(r, Globals.MAX_DEPTH));
                 }
                 writeColor(fullColor);
@@ -48,20 +43,21 @@ public class Main {
             return new Vector3(0, 0, 0);
         }
         Intersection c = null;
-        for (var s : a) {
-            Intersection d = s.intersects(r);
+        int idx = -1;
+        for (int i = 0; i < a.length; i++) {
+            Intersection d = a[i].intersects(r);
             if (d == null) continue;
             if (d.getT() <= 0.001) continue;
             if (c == null || c.getT() > d.getT()) {
                 c = d;
+                idx = i;
             }
         }
         if (c != null) {
-            var p = c.getPoint();
-            var n = c.getNormal();
-            var newDirection = n.add(Globals.randomInUnitSquare()).normalize(); // Diffuse material
-            Ray d = new Ray(p, newDirection);
-            return projectRay(d, depth - 1).scale(0.5);
+            var mat = a[idx].getMaterial();
+            var albedo = mat.getAlbedo();
+            var nray = mat.scatter(r, c);
+            return albedo.scaleVector(projectRay(nray, depth - 1));
         }
 
         double yScaled = 0.5 * (r.getDirection().normalize().getY() + 1.0); // a value between 0.0 and 1.0
