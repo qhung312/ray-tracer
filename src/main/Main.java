@@ -3,48 +3,38 @@ package main;
 import java.io.PrintWriter;
 
 public class Main {
-    final double ratio = 16.0 / 9.0;
-    final int imgHeight = 400;
-    final int imgWidth = (int) (imgHeight * ratio);
-
-    final double viewportHeight = 2;
-    final double viewportWidth = viewportHeight * ratio;
-    final double viewportDist = -1;
-    final int SAMPLES = 10;
-
     Sphere[] a;
     final Vector3 white = new Vector3(1, 1, 1);
     final Vector3 blue = new Vector3(0.5, 0.7, 1);
     final Vector3 red = new Vector3(1, 0, 0);
 
     final PrintWriter out = new PrintWriter(System.out);
-    final int MAX_DEPTH = 10;
 
     void run() {
         a = new Sphere[2];
         a[0] = new Sphere(new Vector3(0, 0, -1), 0.5);
         a[1] = new Sphere(new Vector3(0, -100.5, -1), 100);
-        out.printf("P3\n%d %d\n255\n", imgWidth, imgHeight);
+        out.printf("P3\n%d %d\n255\n", Globals.imgWidth, Globals.imgHeight);
 
         Vector3 origin = new Vector3(0, 0, 0);
-        Vector3 horizontal = new Vector3(viewportWidth, 0, 0);
-        Vector3 vertical = new Vector3(0, viewportHeight, 0);
+        Vector3 horizontal = new Vector3(Globals.viewportWidth, 0, 0);
+        Vector3 vertical = new Vector3(0, Globals.viewportHeight, 0);
         Vector3 lowerLeft = new Vector3(
-                -viewportWidth / 2,
-                -viewportHeight / 2,
-                viewportDist
+                -Globals.viewportWidth / 2,
+                -Globals.viewportHeight / 2,
+                Globals.viewportDist
         );
 
         // Render each pixel
-        for (int i = 0; i < imgHeight; i++) {
-            for (int j = 0; j < imgWidth; j++) {
+        for (int i = 0; i < Globals.imgHeight; i++) {
+            for (int j = 0; j < Globals.imgWidth; j++) {
                 Vector3 fullColor = new Vector3(0, 0, 0);
-                for (int s = 0; s < SAMPLES; s++) {
-                    double y = (imgHeight - i - 1 + Globals.randomDouble(0, 1)) / (imgHeight - 1);
-                    double x = (j + Globals.randomDouble(0, 1)) / (imgWidth - 1);
+                for (int s = 0; s < Globals.SAMPLES; s++) {
+                    double y = (Globals.imgHeight - i - 1 + Globals.randomDouble(0, 1)) / (Globals.imgHeight - 1);
+                    double x = (j + Globals.randomDouble(0, 1)) / (Globals.imgWidth - 1);
 
-                    Ray r = new Ray(origin, lowerLeft.add(vertical.scale(y)).add(horizontal.scale(x)));
-                    fullColor = fullColor.add(projectRay(r, MAX_DEPTH));
+                    Ray r = new Ray(origin, lowerLeft.add(vertical.scale(y)).add(horizontal.scale(x)).normalize());
+                    fullColor = fullColor.add(projectRay(r, Globals.MAX_DEPTH));
                 }
                 writeColor(fullColor);
             }
@@ -69,7 +59,7 @@ public class Main {
         if (c != null) {
             var p = c.getPoint();
             var n = c.getNormal();
-            var newDirection = n.add(Globals.randomInUnitSquare()); // Diffuse material
+            var newDirection = n.add(Globals.randomInUnitSquare()).normalize(); // Diffuse material
             Ray d = new Ray(p, newDirection);
             return projectRay(d, depth - 1).scale(0.5);
         }
@@ -80,9 +70,9 @@ public class Main {
 
     void writeColor(Vector3 color) {
         // map [0,1] to [0,255]
-        double r = color.getX() / SAMPLES;
-        double g = color.getY() / SAMPLES;
-        double b = color.getZ() / SAMPLES;
+        double r = color.getX() / Globals.SAMPLES;
+        double g = color.getY() / Globals.SAMPLES;
+        double b = color.getZ() / Globals.SAMPLES;
         r = Math.sqrt(r);
         g = Math.sqrt(g);
         b = Math.sqrt(b);
