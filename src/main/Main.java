@@ -1,6 +1,7 @@
 package main;
 
 import java.io.PrintWriter;
+import java.security.SecureRandom;
 
 public class Main {
     final double ratio = 16.0 / 9.0;
@@ -10,6 +11,7 @@ public class Main {
     final double viewportHeight = 2;
     final double viewportWidth = viewportHeight * ratio;
     final double viewportDist = -1;
+    final int SAMPLES = 10;
 
     Sphere[] a;
     final Vector3 white = new Vector3(1, 1, 1);
@@ -17,6 +19,7 @@ public class Main {
     final Vector3 red = new Vector3(1, 0, 0);
 
     final PrintWriter out = new PrintWriter(System.out);
+    SecureRandom rng = new SecureRandom();
     final int MAX_DEPTH = 10;
 
     void run() {
@@ -37,14 +40,15 @@ public class Main {
         // Render each pixel
         for (int i = 0; i < imgHeight; i++) {
             for (int j = 0; j < imgWidth; j++) {
-                double y = (double) (imgHeight - i - 1) / (imgHeight - 1);
-                double x = (double) j / (imgWidth - 1);
+                Vector3 fullColor = new Vector3(0, 0, 0);
+                for (int s = 0; s < SAMPLES; s++) {
+                    double y = (imgHeight - i - 1 + randomDouble(0, 1)) / (imgHeight - 1);
+                    double x = (j + randomDouble(0, 1)) / (imgWidth - 1);
 
-                Ray r = new Ray(origin, lowerLeft.add(vertical.scale(y)).add(horizontal.scale(x)));
-
-                // Get color for this ray
-                var color = projectRay(r, MAX_DEPTH);
-                writeColor(color);
+                    Ray r = new Ray(origin, lowerLeft.add(vertical.scale(y)).add(horizontal.scale(x)));
+                    fullColor = fullColor.add(projectRay(r, MAX_DEPTH));
+                }
+                writeColor(fullColor);
             }
         }
 
@@ -56,19 +60,18 @@ public class Main {
             return new Vector3(0, 0, 0);
         }
         Intersection c = null;
-        for (var circle : a) {
-            Intersection d = circle.intersects(r);
+        for (var s : a) {
+            Intersection d = s.intersects(r);
             if (d == null) continue;
             if (c == null || c.getT() > d.getT()) {
                 c = d;
             }
         }
         if (c != null) {
-            var n = c.getNormal().normalize();
-            Ray d = new Ray(
-                    c.getPoint(),
-                    r.getDirection().add(n.scale(-2 * n.dot(r.getDirection())))
-            );
+            var p = c.getPoint();
+            var n = c.getNormal();
+            var newDirection = n.add(random_in_unit_square()); // Diffuse material
+            Ray d = new Ray(p, newDirection);
             return projectRay(d, depth - 1).scale(0.5);
         }
 
@@ -78,10 +81,28 @@ public class Main {
 
     void writeColor(Vector3 color) {
         // map [0,1] to [0,255]
-        int r = (int) (255.999 * color.getX());
-        int g = (int) (255.999 * color.getY());
-        int b = (int) (255.999 * color.getZ());
-        out.printf("%d %d %d\n", r, g, b);
+        double r = color.getX() / SAMPLES;
+        double g = color.getY() / SAMPLES;
+        double b = color.getZ() / SAMPLES;
+        r = Math.sqrt(r);
+        g = Math.sqrt(g);
+        b = Math.sqrt(b);
+
+        int fr = (int) (255.999 * r);
+        int fg = (int) (255.999 * g);
+        int fb = (int) (255.999 * b);
+        out.printf("%d %d %d\n", fr, fg, fb);
+    }
+
+    Vector3 random_in_unit_square() {
+        while (true) {
+            var ans = new Vector3(randomDouble(-1, 1), randomDouble(-1, 1), randomDouble(-1, 1));
+            if (ans.magnitude_squared() < 1) return ans;
+        }
+    }
+
+    double randomDouble(double min, double max) {
+        return rng.nextDouble() * (max - min) + min;
     }
 
     public static void main(String[] args) {
